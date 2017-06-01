@@ -1,5 +1,3 @@
-
- 
 const CONSTANTS = {
    // ms timeout to wait till play will start
   TINY_VIDEO_TIMEOUT: 300,
@@ -18,7 +16,7 @@ let timer;
 // the video element event for play
 const playerEventName = 'play';
 
-// state of the Validator 
+// state of the Validator
 const AutoPlayValidatorState = {
   // the video element id
   elementId: 'iaAutoPlayValidator',
@@ -57,15 +55,15 @@ function initValidatorVideo() {
     // muted must be set to true for starting autoplay
     // https://webkit.org/blog/6784/new-video-policies-for-ios/
     v.setAttribute('muted', 'true');
-    v.setAttribute('preload', 'auto'); 
+    v.setAttribute('preload', 'auto');
     v.setAttribute('playsinline', 'true');
     if(isAndroid) {
       v.setAttribute('autoplay', 'true');
-      v.setAttribute('src', CONSTANTS.PLAYERS.TINY_VIDEO);
+      v.setAttribute('src', CONSTANTS.TINY_VIDEO);
       v.setAttribute('type', 'video/mp4');
     }else {
       const source = document.createElement('source');
-      source.setAttribute('src', CONSTANTS.PLAYERS.TINY_VIDEO);
+      source.setAttribute('src', CONSTANTS.TINY_VIDEO);
       source.setAttribute('type', 'video/mp4');
       v.appendChild(source);
     }
@@ -82,7 +80,7 @@ function onBeforeResolve(isSupport) {
 }
 
 /**
- * on play will check the currentTime to check if there was play event 
+ * on play will check the currentTime to check if there was play event
  * in case of yes we will clear the time out and start to resolve the result
  */
 function onPlay() {
@@ -97,18 +95,25 @@ function onPlay() {
  */
 function onVideoPlayPromiseNotWorking() {
   v.pause();
-  v.addEventListener('loadeddata', () => {
+  v.addEventListener('loadstart', () => {
     timer = setTimeout(() => {
       if (v.currentTime === 0) {
         onBeforeResolve(false);
       }
-    }, CONSTANTS.PLAYERS.TINY_VIDEO_DURATION);
+      // ms timeout to wait till play will start
+    }, CONSTANTS.TINY_VIDEO_TIMEOUT);
     v.addEventListener(playerEventName, () => {
       v.currentTime += 0.1;
       onPlay();
     }, {once: true});
-    v.pause();
-    v.play();
+    const vPromise = v.play();
+    if(vPromise) {
+      vPromise.catch((err) => {
+        if(console.log) {
+          console.log('know issue https://github.com/google/blockly/issues/299 -- '+err);
+        }
+      });
+    }
   }, {once: true});
   v.load();
 }
